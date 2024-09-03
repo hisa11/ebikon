@@ -1,0 +1,436 @@
+Additional Resources:
+Product Page
+date
+05/11/2023
+page 1 of 10
+SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+FEATURES
+• high speed protocol for fast low latency position data
+• patented capacitive ASIC technology
+• low power consumption
+• 12 or 14-bit absolute position with multi-turn capability
+• 3.3 V half-duplex RS485 - high speed 2 Mbps or adjustable data rate
+• settable zero position
+• configuration and programming via AMT Viewpoint™ software
+• compact modular package with locking hub for ease of installation
+• radial and axial cable connections
+• -40 ~ 105°C operating temperature
+ELECTRICAL
+parameterconditions/descriptionmin
+power supplyVDD3.8
+start-up time1
+current consumption
+Note:
+with unloaded output
+typmax
+55.5
+units
+V
+200ms
+16mA
+1. Encoder must be stationary during start-up.
+ABSOLUTE POSITION CHARACTERISTICS
+parameterconditions/description
+resolution12 or 14-bit
+min
+accuracy
+typ
+max
+units
+0.2degrees
+absolute zero positionsettable via AMT Viewpoint™ GUI or RS485 (single-turn
+versions only)multi-turnmulti-turn and single-turn versions availableturns counter2signed binary number14bits
+absolute position update rate12-bit
+14-bit25
+100µs
+µs
+Notes:
+2. Multi-turn encoders only.
+MECHANICAL
+parameter
+conditions/description
+min
+motor shaft length
+max
+9
+motor shaft tolerance
+mm
+15.7
+axial play
+12-bit position resolution
+14-bit position resolution
+cuidevices.com
+units
+mm
+NOM +0/-0.015
+weight
+rotational speed at each resolution
+typ
+g
+±0.3mm
+8,000
+4,000RPM
+RPMAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 2 of 10
+ENVIRONMENTAL
+parameter
+conditions/description
+min
+operating temperature
+typ
+-40
+maxunits
+105°C
+humiditynon-condensing85%
+vibration10~500 Hz, 5 minute sweep, 2 hours on each XYZ5G
+shock3 pulses, 6 ms, 3 on each XYZ200G
+RoHSyesREACHEC 1907/2006maxunits
+RS485 INTERFACE – 2 MBPS DATA RATE (A,B,C,D OPTIONS)
+parameterconditions/description
+min
+protocolRS485 balanced digital multi-port interfacedata rate8 data bits, no parity, 1 stop bit, asynchronoustransceiverTexas Instruments SN65HVD75turnaround timetime before encoder responds with position3
+driver differential output voltage
+magnitudeload resistance = 54 Ω1.5
+typ
+2
+Mbps
+µs
+23.3V
+typmaxunits
+RS485 INTERFACE – ADJUSTABLE DATA RATE (E,F,G,H OPTIONS)
+parameterconditions/descriptionprotocolRS485 balanced digital multi-port interfacedata rate3,48 data bits, no parity, 1 stop bit, asynchronous
+115,200; 38,400; 19,200; 9,600transceiverTexas Instruments SN65HVD72turnaround timetime before encoder responds with position
+115,200 bps
+38,400 bps
+19,200 bps
+9,600 bps10.8
+30
+56
+110
+driver differential output voltage
+magnitudeload resistance = 54 Ω1.5
+Notes:
+min
+bps
+µs
+µs
+µs
+µs
+2
+3.3
+V
+3. Data rate configured with AMT ViewpointTM
+4. Default data rate on kits is 115,200 bps.
+Checksum
+The AMT21 encoder uses a checksum calculation for detecting transmission errors. The upper two bits of every response from the
+encoder are check bits. Those values are shown in the examples below as K1 and K0. The check bits are odd parity; K1 for the odd bits
+in the response, and K0 for the even bits in the response. These check bits are not part of the position, but are used to verify its validity.
+The remaining lower 14 bits are the useful data. Here is an example of how to calculate the checkbits for a 16-bit response, from a 14-bit
+encoder.
+Full response: 0x61AB
+14-bit position: 0x21AB (8619 decimal)
+Checkbit Formula
+Odd: K1 = !(H5^H3^H1^L7^L5^L3^L1)
+Even: K0 = !(H4^H2^H0^L6^L4^L2^L0)
+From the above response 0x61AB:
+Odd: 0 = !(1^0^0^1^1^1^1) = correct
+Even: 1 = !(0^0^1^0^0^0^1) = correct
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 3 of 10
+RS485 INTERFACE (CONTINUED)
+Addressing
+The AMT21 encoder supports multiple encoders on the RS485 bus. This is accomplished by giving each encoder a unique node address.
+This node address is 8 bits long but the low two bits must be 0. Therefore, the encoder can have any single byte value that is divisible by 4
+which allows up to 64 encoders to share the bus.
+By default, the node address is 0x54. Node addresses configurable via AMT ViewpointTM or set at factory for specific configuration upon
+request.
+Available RS485 Node Addresses (HEX)
+00
+20406080A0C004244464082848680C2C4C6C8C1030507090143454*7494B4
+E0
+84A4C4E4
+88A8C8E8
+ACCCEC
+B0D0F0
+D4F4
+1838587898B8D8F8
+1C3C5C7C9CBCDCFC
+*Default address
+The node address serves also as the read position command which is why it will be referred to it as the base command. When the encoder
+sees a command on the RS485 it reads the first 6 bits to determine if it should be listening. If it sees its address, then it interprets the low
+two bits for the command.
+Low two bitsHex000x00Read position
+Command
+010x01Read turns counter (multi-turn encoders only)
+100x02Indicates extended command
+110x03Reserved
+For simplicity the user can abstract away the various bits and simply implement multiple commands in their system. For example:
+Byte
+Command
+0x54Read position
+0x55Read turns counter (multi-turn encoders only)
+0x56Begin extended command
+Extended Commands
+There are some commands that require two bytes to be received before the encoder will enact them. This includes resets and zero saves.
+This prevents collisions and allows the encoder to be fully functional while sharing the bus with other encoders.
+Note that there are no responses to these instructions, and once received the encoder initiates an immediate reset. The user’s system
+should expect to wait until the encoder is powered back up to send any follow up commands. Power on time is listed in the electrical
+section above.
+To send an extended command the user will send the <node address + 0x02> value (0x56 by default) followed by the <extended command>.
+Extended Commands
+Function
+0x5ESet zero position (Single turn encoders only)
+0x75Reset encoder
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 4 of 10
+RS485 INTERFACE EXAMPLES
+Single character commands
+Read Position: <node_address>
+The read position command is the same as the node address which has a default value of 0x54 is sent and the response is received with
+the low byte first. After removing the checksum the result is 0x39E4. For a 14-bit encoder nothing else is required, the position is 14820
+in decimal. However if this is a 12-bit encoder, the position must be shifted to the right 2 bits to throw away the low bits of the response.
+Therefore the position would be 3705 in decimal.
+Read Turns (multi-turn encoders only): <node_address + 0x01>
+The turns counter command is <node_address + 0x01>. By default the turns counter command is 0x55. The encoder responds with the low
+byte first and includes check bits same as the read position command. The resulting number is a signed 14 bit number. The response above
+is showing 1 turn. This value is not retained between power cycles. After a power cycle, the value is reset to zero.
+Extended commands
+Set Zero Position (single turn encoders only): <node_address + 0x02> <0x5E>
+The zero set command is <node_address + 0x02> followed by <0x5E>. By default we send 0x56 and then 0x5E. The encoder zero’s the
+position and immediately resets.
+Encoder Reset: <node_address + 0x02> <0x75>
+The reset command is <node_address + 0x02> followed by <0x75>. By default the command to reset the encoder is 0x56 0x75. The
+encoder performs and immediate reset.
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 5 of 10
+PART NUMBER KEY
+For customers that prefer a specific AMT21 configuration, please reference the custom configuration key below.
+AMT21 X X - X - XX - XXXX - X
+Base Number
+Mounting Base:
+S = Standard
+W= Wide
+RS485 Node Address:
+54 = Default node address
+XX = *Node address options
+Orientation:
+2 = Radial
+3 = Axial
+Absolute Resolution:
+A = 12-bit single-turn, 2 Mbps data rate
+B = 14-bit single-turn, 2 Mbps data rate
+C = 12-bit multi-turn, 2 Mbps data rate
+D = 14-bit multi-turn, 2 Mbps data rate
+E = 12-bit single-turn, adj data rate
+F = 14-bit single-turn, adj data rate
+G = 12-bit multi-turn, adj data rate
+H = 14-bit multi-turn, adj data rate
+Bore Diameter:
+2000 = 2 mm
+3000 = 3 mm
+3175 = 3.175 mm (1/8”)
+4000 = 4 mm
+4760 = 4.76 mm (3/16”)
+5000 = 5 mm
+6000 = 6 mm
+6350 = 6.35 mm (1/4”)
+8000 = 8 mm
+Data Rate:
+F1 = 2 Mbps (A,B,C,D resolutions only)
+A1 = 115,200 bps (E,F,G,H resolutions only)
+A2 = 38,400 bps (E,F,G,H resolutions only)
+A3 = 19,200 bps (E,F,G,H resolutions only)
+A4 = 9,600 bps (E,F,G,H resolutions only)
+*Reference RS485 Interface Addressing section on page 3 for help selecting node address.
+AMT21-V KITS
+In order to provide maximum flexibility for our customers, the AMT21 series is provided in kit form standard. This allows the user to implement the encoder into a range of
+applications using one sku#, reducing engineering and inventory costs.
+SLEEVES
+ORDERING GUIDE
+AMT21XX-V
+Orientation:
+2 = Radial
+3 = Axial
+Absolute Resolution:
+A = 12-bit single-turn, 2 Mbps data rate
+B = 14-bit single-turn, 2 Mbps data rate
+C = 12-bit multi-turn, 2 Mbps data rate
+D = 14-bit multi-turn, 2 Mbps data rate
+E = 12-bit single-turn, adj data rate
+F = 14-bit single-turn, adj data rate
+G = 12-bit multi-turn, adj data rate
+H = 14-bit multi-turn, adj data rate
+2mm3mm1/8 inch
+(3.175mm)4mm3/16 inch
+(4.76mm)5mm6mm1/4 inch
+(6.35mm)8mm
+Light Sky
+BlueOrangePurpleGrayYellowGreenRedSnowBlue
+BASE
+WIDE
+BASE
+cuidevices.com
+TOP
+COVER
+SHAFT
+ADAPTER
+TOOL A
+TOOL CAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 6 of 10
+ENCODER INTERFACE
+PINOUT CONNECTOR
+#Function
+1+5 V
+2B
+3A
+4GND
+51MODE
+61MCLR
+AMT212
+AMT213
+Mating Connector2:
+Molex 502578-0600
+Notes:
+1. Pins 5 and 6 are used for configuration only and should be left disconnected for RS485.
+2. Compatible with prototype cable AMT-06C-1-036 and programming cable AMT-06C-1-036-USB.
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 7 of 10
+MECHANICAL DRAWING
+AMT212
+units: mm
+tolerance: ±0.1
+10.30 0.406
+R15.49 0.610
+15.30 0.602
+15.33 0.604
+39.94 1.573
+28.58 1.125
+11.70 0.461
+AMT213
+units: mm
+tolerance: ±0.1
+10.30 0.406
+R15.49 0.610
+15.30 0.602
+15.33 0.604
+39.06 1.538
+28.58 1.125
+12.60 0.496
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 8 of 10
+MECHANICAL DRAWING (CONTINUED)
+MOUNTING HOLE PATTERNS
+STANDARD BASE
+units: mm[inch]
+tolerance: ±0.1
+22.00 0.866
+21.55 0.848
+20.90 0.823
+12.60[0.496]
+R1.05 0.041
+DETAIL A
+SCALE 4 : 1
+2.00 0.079
+(4 PLCS)
+2.95 0.116
+(2 PLCS)
+16.00 0.630
+0.275 0.011
+A (3 PLCS)
+1.70 0.067
+(2 PLCS)
+19.05 0.750
+25.40 1.000
+WIDE BASE
+units: mm[inch]
+tolerance: ±0.1
+32.44 1.277
+3.00 0.118
+(2 PLCS)
+2.96
+2.87 X 2.96
+(2 PLCS)
+A
+2.87
+0.09
+DETAIL A
+SCALE 4 : 1
+46.02 1.812
+cuidevices.comAdditional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 | page 9 of 10
+ASSEMBLY PROCEDURE
+STEP 1
+STEP 2
+STEP 3
+Align Tool C with
+flange on Base
+1. Insert Tool A as a spacer that defines the distance to
+the mounting surface.
+2. Slide appropriate sized Sleeve over shaft all the way down to Tool A.
+3. Slide Shaft Adaptor over Sleeve.
+4. Use Tool C to press Shaft Adaptor over Sleeve (ensure Shaft Adapter
+and Tool C spline alignment) until flush with Tool A.
+STEP 4
+1. Remove Tools A and C.
+2. Place Base on motor, with Tool C used as a centering tool.
+STEP 5
+1. Snap the Top Cover onto the Base, carefully observing that the
+teeth of the Shaft Adaptor align with the grooves in the hub. *
+1. Fasten the Base on the motor (Tool C may need to be
+rotated to allow for some mounting configurations).
+2. Remove Tool C.
+* We recommend no more than three cycles of mounting and
+removal of the AMT top cover base. Multiple cycles of mounting
+and removing the top cover can cause base fatigue over time and
+affect encoder performance.
+cuidevices.com
+1. Align Tool C with flange on Base.
+2. Slide Base and Tool C onto motor, centering onto
+the Shaft Adapter.
+STEP 6
+1. Make sure the snaps are fully engaged by pressing
+on the Hub with the reverse side of Tool C.
+2. When assembly is finished, the Shaft Adaptor, Sleeve
+and Rotor Hub should all be flush with the Motor
+Shaft rotating freely.Additional Resources:
+Product Page
+CUI DEVICES | SERIES: AMT21 | DESCRIPTION: MODULAR ABSOLUTE ENCODER
+date 05/11/2023 page 10 of 10
+REVISION HISTORY
+rev.
+descriptiondate
+1.0initial release02/20/2018
+1.01added serial interface details05/15/2018
+1.02added multi-turn serial interface details06/29/2018
+1.03updated RS485 interface details06/26/2019
+1.04added adjustable data rate options08/22/2019
+1.05brand update11/21/2019
+1.06added motor shaft tolerance details, updated start-up details09/10/2021
+1.07logo, datasheet style update08/05/2022
+added multi-turn interface details05/11/2023
+1.08
+The revision history provided is for informational purposes only and is believed to be accurate.
+CUI Devices offers a one (1) year limited warranty. Complete warranty information is listed on our website.
+CUI Devices reserves the right to make changes to the product at any time without notice. Information provided by CUI Devices is believed to be accurate
+and reliable. However, no responsibility is assumed by CUI Devices for its use, nor for any infringements of patents or other rights of third parties which may
+result from its use.
+CUI Devices products are not authorized or warranted for use as critical components in equipment that requires an extremely high level of reliability. A
+critical component is any component of a life support device or system whose failure to perform can be reasonably expected to cause the failure of the life
+support device or system, or to affect its safety or effectiveness.
+cuidevices.com

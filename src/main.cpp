@@ -1,48 +1,55 @@
 #include "mbed.h"
 
-// RS-485接続用ピンの定義
-BufferedSerial rs485(PB_6, PA_10, 200000); // TX, RX for RS-485
-BufferedSerial pc(USBTX, USBRX, 9600); // シリアル通信用
-DigitalOut rs485_control_1(D6);
-// DigitalOut rs485_control_2(D7); // DE/RE ピン
+// UART接続用ピンの定義
+BufferedSerial uart(PB_6, PA_10, 2000000); // TX, RX for UART
+BufferedSerial pc(USBTX, USBRX, 9600); // TX, RX for USB Serial
+DigitalOut uart_control(D6); // DE/RE ピン
+char command = 0x54; // 送信するバイナリデータ（デフォルトのエンコーダーアドレス）
 
-// エンコーダからのデータを格納する変数
-char encoder_data[12];
-
-void send_rs485_command() {
-    printf("Sending RS-485 command\r\n");
-    rs485_control_1 = 1;
-    // rs485_control_2 = 0; // 送信モードに切り替え
-    
-    char command = 0x51; // Position read command
-    rs485.write(&command, 1); // Send command
-    
-    rs485_control_1 = 0; // 受信モードに切り替え
-    // rs485_control_2 = 1;
+void send_uart_command() {
+    uart_control = 1; // 送信モードに切り替え
+    uart.write(&command, 1);
+    wait_us(3); // 送信完了後の遅延を追加
+    uart_control = 0; // 受信モードに切り替え
 }
 
-void read_encoder_value() {
-    send_rs485_command(); // Send command
+bool verify_checksum(uint16_t response) {
+    uint8_t high_byte = (response >> 8) & 0xFF;
+    uint8_t low_byte = response & 0xFF;
 
-    // データ受信
-    rs485.read(encoder_data, sizeof(encoder_data)); // Read 2 bytes for position data
+    bool k1 = !((high_byte & 0x20) ^ (high_byte & 0x08) ^ (high_byte & 0x02) ^ (low_byte & 0x80) ^ (low_byte & 0x20) ^ (low_byte & 0x08) ^ (low_byte & 0x02));
+    bool k0 = !((high_byte & 0x10) ^ (high_byte & 0x04) ^ (high_byte & 0x01) ^ (low_byte & 0x40) ^ (low_byte & 0x10) ^ (low_byte & 0x04) ^ (low_byte & 0x01));
 
-    // 受信したデータを1ビットずつ12ビット分格納
-    uint16_t position = 0;
-    for (int i = 0; i < 12; ++i) {
-        position |= ((encoder_data[i / 8] >> (7 - (i % 8))) & 0x01) << (11 - i);
+    return (((response & 0x8000) >> 15) == k1) && (((response & 0x4000) >> 14) == k0);
+}
+
+void receive_uart_data() {
+    // データが読み取れるまで待機
+    while (!uart.readable()) {
+        // ここで待機
     }
 
-    // 12ビットのデータを左に2ビットシフト
-    position <<= 2;
+    char received_data[2]; // 2バイトのデータを受信
+    uart.read(received_data, sizeof(received_data)); // データを読み取る
 
-    // シフトしたデータを表示
-    printf("Position: %u\r\n", position); // Output the position
+    uint16_t response = (received_data[1] << 8) | received_data[0];
+
+    if (verify_checksum(response)) {
+        uint16_t position = response & 0x3FFF; // 下位14ビットが位置データ
+
+        // シフトしたデータを表示
+        char debug_msg[32];
+        int len = sprintf(debug_msg, "Position: %u\r\n", position);
+        pc.write(debug_msg, len);
+    } else {
+        pc.write("Checksum error\r\n", 16);
+    }
 }
 
 int main() {
     while (true) {
-        read_encoder_value(); // Read and display encoder value
-        ThisThread::sleep_for(1000ms); // 1秒待機
+        send_uart_command(); // コマンド送信
+        ThisThread::sleep_for(1ms); // 1ミリ秒待機
+        receive_uart_data(); // 受信データを処理
     }
 }
